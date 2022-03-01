@@ -8,4 +8,30 @@
 
 %%
 
-"if" { fprintf(stderr, "tIF"); }
+"if"	 { return tIF; }
+"{"      { return tAO; }
+"}"      { return tAF; }
+"while"  { return tWHILE; }
+"for"    { return tFOR; }
+"("      { return tPO; }
+")"      { return tPF; }
+"return" { return tRETURN; }
+";"      { return tPV; }
+"+"      { return tADD; }
+"*"      { return tMUL; }
+"else"   { return tELSE; }
+"=="     { return tEQEQ; }
+"="      { return tEQ; }
+">"      { return tSUP; }
+"<"      { return tINF; }
+"-"      { return tMINUS; }
+"||"     { return tOR; }
+"&&"     { return tAND; }
+"int"    { return tINT; }
+"const"  { return tCONST; }
+"//".*$  {}
+"void"   { return tVOID; }
+-?[0-9]+ { return tNB; }
+[a-z]+   { return tVAR; }
+\n	     { return tFL; }
+.	     { return tERROR; }
