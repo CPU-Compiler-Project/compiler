@@ -33,5 +33,5 @@ $(BIN_DIR)/$(BIN): $(addprefix $(BUILD_DIR)/, $(OBJ))
 	$(CC) $(CFLAGS) $(CPPFLAGS) $^ -o $@
 
 clean:
-	$(RM) -r build/*
+	$(RM) -r $(BUILD_DIR)/*
 
