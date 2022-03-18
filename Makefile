@@ -21,7 +21,7 @@ $(BUILD_DIR)/%.o: $(BUILD_DIR)/%.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 $(BUILD_DIR)/y.tab.c: $(SOURCE_DIR)/$(GRM)
-	yacc -d -v -t $< -o $@
+	yacc -d $< -o $@
 
 $(BUILD_DIR)/lex.yy.c: $(SOURCE_DIR)/$(LEX)
 	flex -o $@ $<

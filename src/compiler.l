@@ -12,6 +12,7 @@
 "{"      { return tAO; }
 "}"      { return tAF; }
 "while"  { return tWHILE; }
+"main"   { return tMAIN; }
 "for"    { return tFOR; }
 "("      { return tPO; }
 ")"      { return tPF; }
