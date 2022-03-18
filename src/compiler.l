@@ -19,8 +19,12 @@
 ";"      { return tPV; }
 "+"      { return tADD; }
 "*"      { return tMUL; }
+"//".*$  {}
+"/"      { return tDIV; }
 "else"   { return tELSE; }
 "=="     { return tEQEQ; }
+">="     { return tSUPEQ; }
+"<="     { return tINFEQ; }
 "="      { return tEQ; }
 ">"      { return tSUP; }
 "<"      { return tINF; }
@@ -29,9 +33,8 @@
 "&&"     { return tAND; }
 "int"    { return tINT; }
 "const"  { return tCONST; }
-"//".*$  {}
 "void"   { return tVOID; }
 -?[0-9]+ { return tNB; }
 [a-z]+   { return tVAR; }
-\n	     { return tFL; }
+[\n\t ]	 { }
 .	     { return tERROR; }
