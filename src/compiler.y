@@ -2,11 +2,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "functions.h"
+
 void yyerror(char *s);
 %}
 %union { int nb; }
 %token tNBEXP tPRINTF tCOMMA tMAIN tIF tAO tAF tWHILE tFOR tPO tPF tRETURN tPV tADD tMUL tELSE tEQEQ tEQ tSUP tINF tMINUS tDIV tOR tAND tINT tCONST tVOID tVAR tFL tERROR tSUPEQ tINFEQ
 %token <nb> tNB
+%type <nb> Int Expr
 
 %right tEQ
 %left tADD tMINUS
@@ -30,13 +33,13 @@ Instructions    : If
 Main            : tINT tMAIN tPO tPF BodyInt | Body // TEMP, Body will be deleted there
                   ;
 
-Expr            : tPO Expr tPF { yyerror("c'est un (expr)!"); }
-                  | Expr tADD Expr { yyerror("c'est un +!"); }
-                  | Expr tMINUS Expr { yyerror("c'est un -!"); }
-                  | Expr tDIV Expr { yyerror("c'est un /!"); }
-                  | Expr tMUL Expr { yyerror("c'est un *!"); }
-                  | Expr tAND Expr { yyerror("c'est un&&-!"); }
-                  | Expr tOR Expr { yyerror("c'est un ||!"); }
+Expr            : tPO Expr tPF { yyerror("c'est un (expr)!"); $$ = $2; }
+                  | Expr tADD Expr { yyerror("c'est un +!"); $$ = addition($1,$3); }
+                  | Expr tMINUS Expr { yyerror("c'est un -!"); $$ = substraction($1,$3); }
+                  | Expr tDIV Expr { yyerror("c'est un /!"); $$ = divide($1,$3); }
+                  | Expr tMUL Expr { yyerror("c'est un *!"); $$ = multiply($1,$3); }
+                  | Expr tAND Expr { yyerror("c'est un&&-!"); $$ = andOp($1,$3); }
+                  | Expr tOR Expr { yyerror("c'est un ||!"); $$ = orOp($1,$3); }
                   | Int
                   | tVAR
                   ;
@@ -67,7 +70,7 @@ If              : tIF tPO Expr tPF Body { yyerror("c'est un IF!"); }
                   | tIF tPO Expr tPF Body tELSE Body { yyerror("c'est un ELSE!"); }
                   ;
 
-Printf          : tPRINTF tPO tPF { yyerror("TODO"); } // TODO
+Printf          : tPRINTF tPO tVAR tPF { yyerror("text var"); }
                   ;
 
 Int             : tNB { yyerror("int"); }

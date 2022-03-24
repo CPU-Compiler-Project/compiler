@@ -10,7 +10,7 @@ SOURCE_DIR=src
 
 BIN_DIR=$(BUILD_DIR)/bin
 
-OBJ=y.tab.o lex.yy.o
+OBJ=y.tab.o lex.yy.o functions.o
 
 all: $(BIN_DIR) $(BIN_DIR)/$(BIN)
 	
