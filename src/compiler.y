@@ -6,10 +6,11 @@
 
 void yyerror(char *s);
 %}
-%union { int nb; }
-%token tNBEXP tPRINTF tCOMMA tMAIN tIF tAO tAF tWHILE tFOR tPO tPF tRETURN tPV tADD tMUL tELSE tEQEQ tEQ tSUP tINF tMINUS tDIV tOR tAND tINT tCONST tVOID tVAR tFL tERROR tSUPEQ tINFEQ
-%token <nb> tNB
-%type <nb> Int Expr
+%union { int nb; int *addr; char* var; }
+%token tPRINTF tCOMMA tMAIN tIF tAO tAF tWHILE tFOR tPO tPF tRETURN tPV tADD tMUL tELSE tEQEQ tEQ tSUP tINF tMINUS tDIV tOR tAND tINT tCONST tVOID tFL tERROR tSUPEQ tINFEQ
+%token <nb> tNB tNBEXP
+%token <var> tVAR
+%type <addr> Int Expr Var
 
 %right tEQ
 %left tADD tMINUS
@@ -73,9 +74,12 @@ If              : tIF tPO Expr tPF Body { yyerror("c'est un IF!"); }
 Printf          : tPRINTF tPO tVAR tPF { yyerror("text var"); }
                   ;
 
-Int             : tNB { yyerror("int"); }
-                  | tNBEXP { yyerror("exp"); }
-                  | tMINUS Int { yyerror("nb_negatif"); }
+Var             : tVAR { yyerror("var"); $$ = allocateVar($1); }
+
+Int             : tNB { yyerror("int"); $$ = allocate($1); }
+                  | tNBEXP { yyerror("exp"); $$ = allocate($1); }
+                  | tMINUS tNB { yyerror("nb_negatif"); $$ = allocate(-$2); }
+                  | tMINUS tNBEXP { yyerror("nb_negatif"); $$ = allocate(-$2); }
                   ;
 
 %%
@@ -83,8 +87,12 @@ Int             : tNB { yyerror("int"); }
 void yyerror(char *s) { fprintf(stderr, "%s\n", s); }
 
 int main(void) {
-  // yydebug = 1;
+  //yydebug = 1;
   printf("Compiler\n");
+  stack = malloc(sizeof(Stack));
+  initFile();
   yyparse();
+  closeFile();
+
   return 0;
 }

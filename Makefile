@@ -3,7 +3,7 @@ LEX=compiler.l
 BIN=compiler
 
 CC=gcc
-CFLAGS=-Wall -g
+CFLAGS=-Wall -g -Iinclude
 
 BUILD_DIR=build
 SOURCE_DIR=src
