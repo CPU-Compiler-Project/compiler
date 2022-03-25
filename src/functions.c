@@ -47,6 +47,36 @@ int *allocateVar(char *var) {
     return addr;
 }
 
+int isVarExist(char *name) {
+    return (getAddress(name) != NULL);
+}
+
+int isVarAddressExist(int *addr) {
+    for (int i = 0 ; i < MAX_ELEMENTS ; i++) {
+        if(tab[i].address == addr) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+int editVar(int *addr, int *newVal) {
+    if(0 && !isVarAddressExist(addr))
+        return -1;
+    
+    fprintf(asm_file, "%s %p", "COP"/*Opcode.COP*/, newVal);
+
+    return 0;
+}
+
+int createVar(char *name) {
+    if(isVarExist(name))
+        return -1;
+
+    return 0;
+}
+
 int *getAddress(char *name) {
     int *add = NULL;
     for (int i = 0 ; i < MAX_ELEMENTS ; i++) {

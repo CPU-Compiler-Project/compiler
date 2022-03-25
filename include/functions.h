@@ -6,12 +6,19 @@
 
 #define MAX_ELEMENTS 1000
 
+enum Opcode { COP = 0x05, ADD = 0x01 };
+
 int *getAddress(char *name);
+int isVarExist(char *name);
+int isVarAddressExist(int *addr);
+int createVar(char *name);
+int editVar(int *addr);
 int initFile();
 int closeFile();
 
 int push(int val, int **addr);
 int *allocate(int a);
+createVar
 int *allocateVar(char *var);
 
 int *multiply(int *a, int *b);
