@@ -63,13 +63,13 @@ int closeFile() {
     return 0;
 }
 
-int allocate(int a) {    
+int allocate(int a) {
     push(a);
     printf("%d -> %d[%s] at %p\n", a, stack->value.value, stack->value.name, (void*)stack);
     return 0;
 }
 
-int allocateVar(char *var) {    
+int allocateVar(char *var) {   
     pushVar(var);
     printf("%s -> %d[%s] at %p\n", var, stack->value.value, stack->value.name, (void*)stack);
     return 0;
@@ -90,16 +90,22 @@ int isVarAddressExist(Stack *var_addr) {
 }
 
 int editVar(Stack *var_addr) {
-    if(!isVarAddressExist(var_addr))
+    if(!isVarAddressExist(var_addr)) {
+        printf("editVar error [%p]\n", var_addr);
         return -1;
+    }
     var_addr->value.value = stack->value.value;
+    printf("[UPDATE]%s -> %d[%s] at %p\n",  var_addr->value.name, var_addr->value.value, var_addr->value.name, (void*)var_addr);
+    pull();
 
     return 0;
 }
 
 int createVar(char *name) {
-    if(isVarExist(name))
+    if(isVarExist(name)) {
+        printf("createVar error [%s]\n", name);
         return -1;
+    }
     allocateVar(name);
     return 0;
 }

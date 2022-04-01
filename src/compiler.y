@@ -48,7 +48,7 @@ Expr            : tPO Expr tPF { yyerror("c'est un (expr)!"); $$ = $2; }
 While           : tWHILE tPO Expr tPF Body
                   ;
 
-AffectationOpt  : tVAR
+AffectationOpt  : tVAR { $<nb>$ = createVar($1); yyerror("c'est CREER"); }
                   | Affectation
                   ;
 
@@ -63,7 +63,7 @@ ConstOpt        : tCONST
 Declaration     : ConstOpt tINT MultVar
                   ;
 
-Affectation     : tVAR tEQ Expr { $<nb>$ = createVar($1); yyerror("c'est CREER"); }
+Affectation     : tVAR { $<nb>$ = createVar($1); yyerror("c'est CREER"); } tEQ Expr { $<nb>$ = editVar(getAddress($1)); yyerror("c'est INITIER"); }
                   ;
 
 AffectationEdit : Var tEQ Expr { $<nb>$ = editVar($1); yyerror("c'est EDITER"); }
@@ -77,7 +77,7 @@ If              : tIF tPO Expr tPF Body { yyerror("c'est un IF!"); }
 Printf          : tPRINTF tPO Var tPF { printf("%p", $3); yyerror("text var"); }
                   ;
 
-Var             : tVAR { yyerror("var"); getAddress($1); }
+Var             : tVAR { yyerror("var"); $$ = getAddress($1); }
 
 Int             : tNB { yyerror("int"); allocate($1); }
                   | tNBEXP { yyerror("exp"); allocate($1); }
