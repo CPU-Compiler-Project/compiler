@@ -1,6 +1,7 @@
 %{
 #include <stdlib.h>
 #include <stdio.h>
+#include "functions.h"
 #include "y.tab.h"
 %}
 
@@ -39,6 +40,6 @@
 "void"   { return tVOID; }
 [0-9]+"e"[-+]?[0-9]+    { yylval.nb = (int)atof(yytext); return tNBEXP; }
 [0-9]+                  { yylval.nb = atoi(yytext); return tNB; }
-[a-zA-Z][a-zA-Z0-9_]*   { yylval.var = yytext; return tVAR; }
+[a-zA-Z][a-zA-Z0-9_]*   { yylval.var = strdup(yytext); return tVAR; }
 [\n\t ]	 { }
 .	     { return tERROR; }

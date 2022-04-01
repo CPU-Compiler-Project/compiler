@@ -4,42 +4,43 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define MAX_ELEMENTS 1000
-
-enum Opcode { COP = 0x05, ADD = 0x01 };
-
-int *getAddress(char *name);
-int isVarExist(char *name);
-int isVarAddressExist(int *addr);
-int createVar(char *name);
-int editVar(int *addr);
-int initFile();
-int closeFile();
-
-int push(int val, int **addr);
-int *allocate(int a);
-createVar
-int *allocateVar(char *var);
-
-int *multiply(int *a, int *b);
-int *divide(int *a, int *b);
-int *substraction(int *a, int *b);
-int *addition(int *a, int *b);
-int *andOp(int *a, int *b);
-int *orOp(int *a, int *b);
+typedef struct Data {
+    char *name;
+    int value;
+    int depth;
+} Data;
 
 typedef struct Stack {
-    int value;
+    Data value;
     struct Stack *next;
 } Stack;
 
-typedef struct Data {
-    char *name;
-    int *address;
-} Data;
+enum Opcode { COP = 0x05, ADD = 0x01 };
 
+Stack *getAddress(char *name);
+int isVarExist(char *name);
+int createVar(char *name);
+int editVar(Stack *var_addr);
+int initFile();
+void incr_depth();
+void decr_depth();
+int closeFile();
+
+int pull();
+int push(int val);
+int pushVar(char *name);
+int allocate(int a);
+int allocateVar(char *var);
+
+int multiply();
+int divide();
+int substraction();
+int addition();
+int andOp();
+int orOp();
+
+int depth;
 Stack *stack;
-Data tab[MAX_ELEMENTS];
 FILE *asm_file;
 
 #endif // DEF_FUNCTIONS

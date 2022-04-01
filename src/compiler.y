@@ -6,7 +6,7 @@
 
 void yyerror(char *s);
 %}
-%union { int nb; int *addr; char *var; }
+%union { int nb; Stack *addr; char *var; }
 %token tPRINTF tCOMMA tMAIN tIF tAO tAF tWHILE tFOR tPO tPF tRETURN tPV tADD tMUL tELSE tEQEQ tEQ tSUP tINF tMINUS tDIV tOR tAND tINT tCONST tVOID tFL tERROR tSUPEQ tINFEQ
 %token <nb> tNB tNBEXP
 %token <var> tVAR
@@ -31,16 +31,16 @@ Instructions    : If
                   | Instructions Instructions
                   ;
                   
-Main            : tINT tMAIN tPO tPF BodyInt | Body // TEMP, Body will be deleted there
+Main            : tINT tMAIN tPO tPF BodyInt { incr_depth(); }| Body // TEMP, Body will be deleted there
                   ;
 
 Expr            : tPO Expr tPF { yyerror("c'est un (expr)!"); $$ = $2; }
-                  | Expr tADD Expr { yyerror("c'est un +!"); $$ = addition($1,$3); }
-                  | Expr tMINUS Expr { yyerror("c'est un -!"); $$ = substraction($1,$3); }
-                  | Expr tDIV Expr { yyerror("c'est un /!"); $$ = divide($1,$3); }
-                  | Expr tMUL Expr { yyerror("c'est un *!"); $$ = multiply($1,$3); }
-                  | Expr tAND Expr { yyerror("c'est un&&-!"); $$ = andOp($1,$3); }
-                  | Expr tOR Expr { yyerror("c'est un ||!"); $$ = orOp($1,$3); }
+                  | Expr tADD Expr { yyerror("c'est un +!"); addition(); }
+                  | Expr tMINUS Expr { yyerror("c'est un -!"); substraction(); }
+                  | Expr tDIV Expr { yyerror("c'est un /!"); divide(); }
+                  | Expr tMUL Expr { yyerror("c'est un *!"); multiply(); }
+                  | Expr tAND Expr { yyerror("c'est un&&-!"); andOp(); }
+                  | Expr tOR Expr { yyerror("c'est un ||!"); orOp(); }
                   | Int
                   | Var
                   ;
@@ -63,10 +63,10 @@ ConstOpt        : tCONST
 Declaration     : ConstOpt tINT MultVar
                   ;
 
-Affectation     : tVAR tEQ Expr { $<nb>$ = createVar($1); printf("%p", $1); yyerror("c'est u"); }
+Affectation     : tVAR tEQ Expr { $<nb>$ = createVar($1); yyerror("c'est CREER"); }
                   ;
 
-AffectationEdit : Var tEQ Expr { $<nb>$ = editVar($1, $3); printf("%p", $1); yyerror("c'est u"); }
+AffectationEdit : Var tEQ Expr { $<nb>$ = editVar($1); yyerror("c'est EDITER"); }
                   ;
 
 If              : tIF tPO Expr tPF Body { yyerror("c'est un IF!"); } 
@@ -77,12 +77,12 @@ If              : tIF tPO Expr tPF Body { yyerror("c'est un IF!"); }
 Printf          : tPRINTF tPO Var tPF { printf("%p", $3); yyerror("text var"); }
                   ;
 
-Var             : tVAR { yyerror("var"); $$ = getAddress($1); }
+Var             : tVAR { yyerror("var"); getAddress($1); }
 
-Int             : tNB { yyerror("int"); $$ = allocate($1); }
-                  | tNBEXP { yyerror("exp"); $$ = allocate($1); }
-                  | tMINUS tNB { yyerror("nb_negatif"); $$ = allocate(-$2); }
-                  | tMINUS tNBEXP { yyerror("nb_negatif"); $$ = allocate(-$2); }
+Int             : tNB { yyerror("int"); allocate($1); }
+                  | tNBEXP { yyerror("exp"); allocate($1); }
+                  | tMINUS tNB { yyerror("nb_negatif"); allocate(-$2); }
+                  | tMINUS tNBEXP { yyerror("nb_negatif"); allocate(-$2); }
                   ;
 
 %%
