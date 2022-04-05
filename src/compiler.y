@@ -20,7 +20,7 @@ void yyerror(char *s);
 
 %%
 
-Body            : tAO Instructions tAF { yyerror("c'est une BODY!"); } ;
+Body            : tAO { incr_depth(); } Instructions tAF { yyerror("c'est une BODY!"); decr_depth(); } ;
 BodyInt         : tAO Instructions tRETURN tNB tPV tAF { yyerror("c'est une return!"); } ;
 
 Instructions    : If 
@@ -93,6 +93,7 @@ int main(void) {
   //yydebug = 1;
   printf("Compiler\n");
   stack = malloc(sizeof(Stack));
+  istack = malloc(sizeof(InstructionStack));
   initFile();
   yyparse();
   closeFile();

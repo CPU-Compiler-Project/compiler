@@ -4,6 +4,7 @@
 
 #include "functions.h"
 
+
 int push(int val)
 {
     Stack *element = malloc(sizeof(&stack));
@@ -12,6 +13,18 @@ int push(int val)
     element->value = (Data) { .name = "tmp_anonymous_var", .value = val, .depth = depth };
     element->next = stack;
     stack = element;
+
+    return 0;
+}
+
+int pushInstruction(char *instruction)
+{
+    InstructionStack *element = malloc(sizeof(&istack));
+    if(!element)
+        return -1;
+    element->instruction = instruction;
+    element->next = istack;
+    istack = element;
 
     return 0;
 }
@@ -33,6 +46,11 @@ int pull() {
     return 0;
 }
 
+int pullInstruction() {
+    istack = istack->next;
+    return 0;
+}
+
 int initFile() {
     asm_file = fopen("./build/out.asm", "w");
     if (asm_file == NULL) {
@@ -42,6 +60,13 @@ int initFile() {
     stack = NULL;
     depth = 0;
 
+    return 0;
+}
+
+int writeToFile(char *str) {
+    if(asm_file == NULL || fprintf(asm_file, "%s\n", str) < 0) {
+        return -1;
+    }
     return 0;
 }
 
@@ -125,25 +150,60 @@ Stack *getAddress(char *name) {
 }
 
 int addition() {
+    Stack *addr1 = stack;
+    pull();
+    Stack *addr2 = stack;
+    
+    char addOp[MAX_BUFFER];
+    sprintf(addOp, "0x%x %p %p", ADD, addr2, addr1);
+    printf("add: [%s]\n", addOp);
+    pushInstruction(addOp);
+    writeToFile(addOp); // do this at the end?
+
     return 0;
 }
 
 int multiply() {
+    int *addr1 = &stack->value.value;
+    pull();
+    int *addr2 = &stack->value.value;
+    //TODO: write asm
+
     return 0;
 }
 
 int divide() {
+    int *addr1 = &stack->value.value;
+    pull();
+    int *addr2 = &stack->value.value;
+    //TODO: write asm (DIV addr2 addr1)
+
     return 0;
 }
 
 int substraction() {
+    int *addr1 = &stack->value.value;
+    pull();
+    int *addr2 = &stack->value.value;
+    //TODO: write asm
+
     return 0;
 }
 
 int andOp() {
+    int *addr1 = &stack->value.value;
+    pull();
+    int *addr2 = &stack->value.value;
+    //TODO: write asm
+
     return 0;
 }
 
 int orOp() {
+    int *addr1 = &stack->value.value;
+    pull();
+    int *addr2 = &stack->value.value;
+    //TODO: write asm
+
     return 0;
 }

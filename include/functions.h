@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define MAX_BUFFER 100
+
 typedef struct Data {
     char *name;
     int value;
@@ -15,7 +17,12 @@ typedef struct Stack {
     struct Stack *next;
 } Stack;
 
-enum Opcode { COP = 0x05, ADD = 0x01 };
+typedef struct InstructionStack {
+    char *instruction;
+    struct InstructionStack *next;
+} InstructionStack;
+
+enum Opcode { ADD = 0x01, MUL = 0x02, SOU = 0x03, DIV = 0x04, COP = 0x05, AFC = 0x06, LOAD = 0x07, STORE = 0x08, JMP = 0x09, JMPF = 0x0A, JMPB = 0x0B, CMP = 0x0C, CMPF = 0x0D, CMPB = 0x0E, PRINT = 0x0F, HALT = 0x10, NOP = 0x11, PUSH = 0x12, POP = 0x13, CALL = 0x14, RET = 0x15 };
 
 Stack *getAddress(char *name);
 int isVarExist(char *name);
@@ -41,6 +48,7 @@ int orOp();
 
 int depth;
 Stack *stack;
+InstructionStack *istack;
 FILE *asm_file;
 
 #endif // DEF_FUNCTIONS
