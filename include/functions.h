@@ -31,10 +31,14 @@ int editVar(Stack *var_addr);
 int initFile();
 void incr_depth();
 void decr_depth();
+int writeToFile(char *str);
+int writeInstructions();
 int closeFile();
 
 int pull();
+int pullInstruction();
 int push(int val);
+int pushInstruction(char *instruction);
 int pushVar(char *name);
 int allocate(int a);
 int allocateVar(char *var);
@@ -45,6 +49,7 @@ int substraction();
 int addition();
 int andOp();
 int orOp();
+int ifCond();
 
 int depth;
 Stack *stack;

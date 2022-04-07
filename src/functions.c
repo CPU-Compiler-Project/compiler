@@ -22,7 +22,7 @@ int pushInstruction(char *instruction)
     InstructionStack *element = malloc(sizeof(&istack));
     if(!element)
         return -1;
-    element->instruction = instruction;
+    element->instruction = strndup(instruction, MAX_BUFFER);
     element->next = istack;
     istack = element;
 
@@ -58,6 +58,7 @@ int initFile() {
     }
 
     stack = NULL;
+    istack = NULL;
     depth = 0;
 
     return 0;
@@ -67,6 +68,17 @@ int writeToFile(char *str) {
     if(asm_file == NULL || fprintf(asm_file, "%s\n", str) < 0) {
         return -1;
     }
+    return 0;
+}
+
+int writeInstructions() {
+    while (istack != NULL) {
+        if(writeToFile(istack->instruction) < 0) {
+            return -1;
+        }
+        pullInstruction();
+    }
+    
     return 0;
 }
 
@@ -150,15 +162,14 @@ Stack *getAddress(char *name) {
 }
 
 int addition() {
-    Stack *addr1 = stack;
+    int *addr1 = &stack->value.value;
     pull();
-    Stack *addr2 = stack;
+    int *addr2 = &stack->value.value;
     
-    char addOp[MAX_BUFFER];
-    sprintf(addOp, "0x%x %p %p", ADD, addr2, addr1);
-    printf("add: [%s]\n", addOp);
-    pushInstruction(addOp);
-    writeToFile(addOp); // do this at the end?
+    char opStr[MAX_BUFFER];
+    sprintf(opStr, "0x%x %p %p", ADD, addr2, addr1);
+    printf("ADD: [%s]\n", opStr);
+    pushInstruction(opStr);
 
     return 0;
 }
@@ -167,7 +178,11 @@ int multiply() {
     int *addr1 = &stack->value.value;
     pull();
     int *addr2 = &stack->value.value;
-    //TODO: write asm
+
+    char opStr[MAX_BUFFER];
+    sprintf(opStr, "0x%x %p %p", MUL, addr2, addr1);
+    printf("MUL: [%s]\n", opStr);
+    pushInstruction(opStr);
 
     return 0;
 }
@@ -176,7 +191,11 @@ int divide() {
     int *addr1 = &stack->value.value;
     pull();
     int *addr2 = &stack->value.value;
-    //TODO: write asm (DIV addr2 addr1)
+
+    char opStr[MAX_BUFFER];
+    sprintf(opStr, "0x%x %p %p", DIV, addr2, addr1);
+    printf("DIV: [%s]\n", opStr);
+    pushInstruction(opStr);
 
     return 0;
 }
@@ -185,7 +204,11 @@ int substraction() {
     int *addr1 = &stack->value.value;
     pull();
     int *addr2 = &stack->value.value;
-    //TODO: write asm
+
+    char opStr[MAX_BUFFER];
+    sprintf(opStr, "0x%x %p %p", SOU, addr2, addr1);
+    printf("SOU: [%s]\n", opStr);
+    pushInstruction(opStr);
 
     return 0;
 }
@@ -207,3 +230,4 @@ int orOp() {
 
     return 0;
 }
+

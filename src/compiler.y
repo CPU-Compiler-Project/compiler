@@ -20,8 +20,8 @@ void yyerror(char *s);
 
 %%
 
-Body            : tAO { incr_depth(); } Instructions tAF { yyerror("c'est une BODY!"); decr_depth(); } ;
-BodyInt         : tAO Instructions tRETURN tNB tPV tAF { yyerror("c'est une return!"); } ;
+Body            : tAO { incr_depth(); } Instructions tAF { decr_depth(); } ;
+BodyInt         : tAO { incr_depth(); } Instructions tRETURN tNB tPV tAF { decr_depth(); } ;
 
 Instructions    : If 
                   | AffectationEdit tPV  { yyerror("c'est une affectation!"); }
@@ -31,7 +31,7 @@ Instructions    : If
                   | Instructions Instructions
                   ;
                   
-Main            : tINT tMAIN tPO tPF BodyInt { incr_depth(); }| Body // TEMP, Body will be deleted there
+Main            : tINT tMAIN tPO tPF BodyInt { return 0; }
                   ;
 
 Expr            : tPO Expr tPF { yyerror("c'est un (expr)!"); $$ = $2; }
@@ -69,7 +69,7 @@ Affectation     : tVAR { $<nb>$ = createVar($1); yyerror("c'est CREER"); } tEQ E
 AffectationEdit : Var tEQ Expr { $<nb>$ = editVar($1); yyerror("c'est EDITER"); }
                   ;
 
-If              : tIF tPO Expr tPF Body { yyerror("c'est un IF!"); } 
+If              : tIF tPO Expr tPF { yyerror("c'est un IF!"); } Body { yyerror("c'est un IF!"); } 
                   | tIF tPO Expr tPF Body tELSE If { yyerror("c'est un ELSEIF!"); }
                   | tIF tPO Expr tPF Body tELSE Body { yyerror("c'est un ELSE!"); }
                   ;
@@ -96,6 +96,7 @@ int main(void) {
   istack = malloc(sizeof(InstructionStack));
   initFile();
   yyparse();
+  writeInstructions();
   closeFile();
 
   return 0;
