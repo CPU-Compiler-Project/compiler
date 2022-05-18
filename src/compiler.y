@@ -24,7 +24,7 @@ Body            : tAO { incr_depth(); } Instructions tAF { decr_depth(); } ;
 BodyInt         : tAO { incr_depth(); } Instructions tRETURN tNB tPV tAF { decr_depth(); } ;
 
 Instructions    : If 
-                  | AffectationEdit tPV  { yyerror("c'est une affectation!"); }
+                  | AffectationEdit tPV  { }
                   | While
                   | Declaration tPV
                   | Printf tPV
@@ -34,21 +34,21 @@ Instructions    : If
 Main            : tINT tMAIN tPO tPF BodyInt { return 0; }
                   ;
 
-Expr            : tPO Expr tPF { yyerror("c'est un (expr)!"); $$ = $2; }
-                  | Expr tADD Expr { yyerror("c'est un +!"); addition(); }
-                  | Expr tMINUS Expr { yyerror("c'est un -!"); substraction(); }
-                  | Expr tDIV Expr { yyerror("c'est un /!"); divide(); }
-                  | Expr tMUL Expr { yyerror("c'est un *!"); multiply(); }
-                  | Expr tAND Expr { yyerror("c'est un&&-!"); andOp(); }
-                  | Expr tOR Expr { yyerror("c'est un ||!"); orOp(); }
+Expr            : tPO Expr tPF { $$ = $2; }
+                  | Expr tADD Expr { addition(); }
+                  | Expr tMINUS Expr { substraction(); }
+                  | Expr tDIV Expr { divide(); }
+                  | Expr tMUL Expr { multiply(); }
+                  | Expr tAND Expr { andOp(); }
+                  | Expr tOR Expr { orOp(); }
                   | Int
-                  | Var
+                  | tVAR { allocate(getValue($1)); }
                   ;
 
 While           : tWHILE tPO Expr tPF Body
                   ;
 
-AffectationOpt  : tVAR { $<nb>$ = createVar($1); yyerror("c'est CREER"); }
+AffectationOpt  : tVAR { $<nb>$ = createVar($1); }
                   | Affectation
                   ;
 
@@ -63,10 +63,10 @@ ConstOpt        : tCONST
 Declaration     : ConstOpt tINT MultVar
                   ;
 
-Affectation     : tVAR { $<nb>$ = createVar($1); yyerror("c'est CREER"); } tEQ Expr { $<nb>$ = editVar(getAddress($1)); yyerror("c'est INITIER"); }
+Affectation     : tVAR { $<nb>$ = createVar($1); } tEQ Expr { $<nb>$ = editVar(getAddress($1)); }
                   ;
 
-AffectationEdit : Var tEQ Expr { $<nb>$ = editVar($1); yyerror("c'est EDITER"); }
+AffectationEdit : Var tEQ Expr { $<nb>$ = editVar($1); }
                   ;
 
 If              : tIF tPO Expr tPF { yyerror("c'est un IF!"); } Body { yyerror("c'est un IF!"); } 
@@ -77,12 +77,12 @@ If              : tIF tPO Expr tPF { yyerror("c'est un IF!"); } Body { yyerror("
 Printf          : tPRINTF tPO Var tPF { printf("%p", $3); yyerror("text var"); }
                   ;
 
-Var             : tVAR { yyerror("var"); $$ = getAddress($1); }
+Var             : tVAR { $$ = getAddress($1); }
 
-Int             : tNB { yyerror("int"); allocate($1); }
-                  | tNBEXP { yyerror("exp"); allocate($1); }
-                  | tMINUS tNB { yyerror("nb_negatif"); allocate(-$2); }
-                  | tMINUS tNBEXP { yyerror("nb_negatif"); allocate(-$2); }
+Int             : tNB { allocate($1); }
+                  | tNBEXP { allocate($1); }
+                  | tMINUS tNB { allocate(-$2); }
+                  | tMINUS tNBEXP { allocate(-$2); }
                   ;
 
 %%
@@ -96,6 +96,7 @@ int main(void) {
   istack = malloc(sizeof(InstructionStack));
   initFile();
   yyparse();
+  writeValues();
   writeInstructions();
   closeFile();
 

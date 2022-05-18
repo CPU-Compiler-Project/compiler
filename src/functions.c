@@ -7,12 +7,10 @@
 
 int push(int val)
 {
-    Stack *element = malloc(sizeof(&stack));
-    if(!element)
-        return -1;
-    element->value = (Data) { .name = "tmp_anonymous_var", .value = val, .depth = depth };
-    element->next = stack;
-    stack = element;
+    char opStr[MAX_BUFFER];
+    sprintf(opStr, "0x%x %d", PUSH, val);
+    printf("PUSH: [%s]\n", opStr);
+    pushInstruction(opStr);
 
     return 0;
 }
@@ -43,6 +41,13 @@ int pushVar(char *name)
 
 int pull() {
     stack = stack->next;
+    return 0;
+}
+int popASM() {
+    char opStr[MAX_BUFFER];
+    sprintf(opStr, "0x%x %p", POP, R0);
+    printf("POP: [%s]\n", opStr);
+    pushInstruction(opStr);
     return 0;
 }
 
@@ -77,6 +82,18 @@ int writeInstructions() {
             return -1;
         }
         pullInstruction();
+    }
+    
+    return 0;
+}
+
+int writeValues() {
+    while (stack != NULL) {
+        char opStr[MAX_BUFFER];
+        sprintf(opStr, "0x%x %p %d", AFC, stack, stack->value.value);
+        printf("AFC: [%s]\n", opStr);
+        pushInstruction(opStr);
+        pull();
     }
     
     return 0;
@@ -161,23 +178,26 @@ Stack *getAddress(char *name) {
     return stack_tmp;
 }
 
+int getValue(char *name) {
+    Stack *stack_tmp = getAddress(name);
+    return stack_tmp != NULL ? stack_tmp->value.value : 0; // error code could be better
+}
+
 int addition() {
-    int *addr1 = &stack->value.value;
-    pull();
-    int *addr2 = &stack->value.value;
+    popASM();
     
-    char opStr[MAX_BUFFER];
-    sprintf(opStr, "0x%x %p %p", ADD, addr2, addr1);
-    printf("ADD: [%s]\n", opStr);
-    pushInstruction(opStr);
+    char opStr1[MAX_BUFFER];
+    sprintf(opStr1, "0x%x 0x%x 0x%x", ADD, SP, R0);
+    printf("ADD: [%s]\n", opStr1);
+    pushInstruction(opStr1);
 
     return 0;
 }
 
 int multiply() {
-    int *addr1 = &stack->value.value;
+    Stack *addr1 = stack;
     pull();
-    int *addr2 = &stack->value.value;
+    Stack *addr2 = stack;
 
     char opStr[MAX_BUFFER];
     sprintf(opStr, "0x%x %p %p", MUL, addr2, addr1);
@@ -188,9 +208,9 @@ int multiply() {
 }
 
 int divide() {
-    int *addr1 = &stack->value.value;
+    Stack *addr1 = stack;
     pull();
-    int *addr2 = &stack->value.value;
+    Stack *addr2 = stack;
 
     char opStr[MAX_BUFFER];
     sprintf(opStr, "0x%x %p %p", DIV, addr2, addr1);
@@ -201,9 +221,9 @@ int divide() {
 }
 
 int substraction() {
-    int *addr1 = &stack->value.value;
+    Stack *addr1 = stack;
     pull();
-    int *addr2 = &stack->value.value;
+    Stack *addr2 = stack;
 
     char opStr[MAX_BUFFER];
     sprintf(opStr, "0x%x %p %p", SOU, addr2, addr1);
@@ -214,20 +234,44 @@ int substraction() {
 }
 
 int andOp() {
-    int *addr1 = &stack->value.value;
+    Stack *addr1 = stack;
     pull();
-    int *addr2 = &stack->value.value;
+    Stack *addr2 = stack;
     //TODO: write asm
 
     return 0;
 }
 
 int orOp() {
-    int *addr1 = &stack->value.value;
+    Stack *addr1 = stack;
     pull();
-    int *addr2 = &stack->value.value;
+    Stack *addr2 = stack;
     //TODO: write asm
 
     return 0;
 }
 
+int ifCond() {
+    char opStr[MAX_BUFFER];
+    sprintf(opStr, "tmp"); // sera remplacer plus tard dans la compilation
+    printf("JMPF: [%s]\n", opStr);
+    pushInstruction(opStr);
+    return 0;
+}
+
+int ifBis() { 
+    InstructionStack *element = malloc(sizeof(&istack));
+    int instructionCPT = 0;
+    while (strcmp(element->instruction,"tmp")!=0) {
+        element = istack->next;
+        instructionCPT++;
+    }
+
+    char opStr[MAX_BUFFER];
+    sprintf(opStr, "0x%x ", JMPF);
+    printf("JMPF: [%s]\n", opStr);
+    pushInstruction(opStr);
+
+    return 0;
+    
+}
