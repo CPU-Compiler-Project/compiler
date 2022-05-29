@@ -10,7 +10,7 @@ void yyerror(char *s);
 %token tPRINTF tCOMMA tMAIN tIF tAO tAF tWHILE tFOR tPO tPF tRETURN tPV tADD tMUL tELSE tEQEQ tEQ tSUP tINF tMINUS tDIV tOR tAND tINT tCONST tVOID tFL tERROR tSUPEQ tINFEQ
 %token <nb> tNB tNBEXP
 %token <var> tVAR
-%type <addr> Int Expr Var
+%type <addr> Int Expr Var // j'ai touché au c mais pas trop au yacc, je pense qu'il va falloir repenser les types
 
 %right tEQ
 %left tADD tMINUS
@@ -92,6 +92,7 @@ void yyerror(char *s) { fprintf(stderr, "%s\n", s); }
 int main(void) {
   //yydebug = 1;
   printf("Compiler\n");
+  sp = 0;
   stack = malloc(sizeof(Stack));
   istack = malloc(sizeof(InstructionStack));
   initFile();

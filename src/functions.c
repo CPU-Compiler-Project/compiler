@@ -4,20 +4,31 @@
 
 #include "functions.h"
 
+// en fait on a pas implementer de push en VHDL, il faut qu'on gère les adresses memoire
+// du fpga. Elles sont numérotées de 0 a 15 dans notre implémentation vhdl et chaque registre fait 1 octet
+// Pour savoir l'addresse du premier registre disponible, on a l'int sp qui pointe vers la première adresse dispo
 
 int push(int val)
 {
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "0x%x %d", PUSH, val);
+    //sprintf(opStr, "0x%x %d", PUSH, val);
+    sprintf(opStr, "0x%d %d %d", 22, sp, val);
+    sp++;
+    printf("TEST11");
     printf("PUSH: [%s]\n", opStr);
+    printf("TEST22");
     pushInstruction(opStr);
 
     return 0;
 }
 
+// aucune idée de comment marche ce truc avec le fpga
 int pushInstruction(char *instruction)
 {
+    
+    printf("TEST3");
     InstructionStack *element = malloc(sizeof(&istack));
+    printf("TEST44");
     if(!element)
         return -1;
     element->instruction = strndup(instruction, MAX_BUFFER);
@@ -32,20 +43,24 @@ int pushVar(char *name)
     Stack *element = malloc(sizeof(&stack));
     if(!element)
         return -1;
-    element->value = (Data) { .name = name, .value = 0, .depth = depth };
+    element->value = (Data) { .name = name, .addr = sp, .value = 0, .depth = depth };
     element->next = stack;
     stack = element;
+    push(0); // On réserve un registre qu'on initialise à 0
 
     return 0;
 }
 
 int pull() {
     stack = stack->next;
+    sp--;
     return 0;
 }
+
+// je suis pas sur de ce que fait celle la, pour moi faudrait modifier la stack aussi
 int popASM() {
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "0x%x %p", POP, R0);
+    sprintf(opStr, "0x%x %x", POP, R0);
     printf("POP: [%s]\n", opStr);
     pushInstruction(opStr);
     return 0;
@@ -87,9 +102,12 @@ int writeInstructions() {
     return 0;
 }
 
+
+// TODO: je pense que le sprintf n'est pas bon
 int writeValues() {
     while (stack != NULL) {
         char opStr[MAX_BUFFER];
+        //sprintf(opStr, "0x%x %p %d", AFC, stack, stack->value.value);
         sprintf(opStr, "0x%x %p %d", AFC, stack, stack->value.value);
         printf("AFC: [%s]\n", opStr);
         pushInstruction(opStr);
@@ -183,11 +201,12 @@ int getValue(char *name) {
     return stack_tmp != NULL ? stack_tmp->value.value : 0; // error code could be better
 }
 
+// je capte pas pourquoi on fait appel a popASM, pour moi il faut réutiliser la structure des op suivantes
 int addition() {
     popASM();
     
     char opStr1[MAX_BUFFER];
-    sprintf(opStr1, "0x%x 0x%x 0x%x", ADD, SP, R0);
+    //sprintf(opStr1, "0x%x 0x%x 0x%x", ADD, SP, R0);
     printf("ADD: [%s]\n", opStr1);
     pushInstruction(opStr1);
 
@@ -200,7 +219,8 @@ int multiply() {
     Stack *addr2 = stack;
 
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "0x%x %p %p", MUL, addr2, addr1);
+    //sprintf(opStr, "0x%x %p %p", MUL, addr2, addr1);
+    sprintf(opStr, "0x%x %d %d", MUL, addr2->value.addr, addr1->value.addr);
     printf("MUL: [%s]\n", opStr);
     pushInstruction(opStr);
 
@@ -213,7 +233,8 @@ int divide() {
     Stack *addr2 = stack;
 
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "0x%x %p %p", DIV, addr2, addr1);
+    //sprintf(opStr, "0x%x %p %p", DIV, addr2, addr1);
+    sprintf(opStr, "0x%x %d %d", DIV, addr2->value.addr, addr1->value.addr);
     printf("DIV: [%s]\n", opStr);
     pushInstruction(opStr);
 
@@ -226,7 +247,8 @@ int substraction() {
     Stack *addr2 = stack;
 
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "0x%x %p %p", SOU, addr2, addr1);
+    //sprintf(opStr, "0x%x %p %p", SOU, addr2, addr1);
+    sprintf(opStr, "0x%x %d %d", SOU, addr2->value.addr, addr1->value.addr);
     printf("SOU: [%s]\n", opStr);
     pushInstruction(opStr);
 

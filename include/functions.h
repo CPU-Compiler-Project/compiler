@@ -8,7 +8,8 @@
 
 typedef struct Data {
     char *name;
-    int value;
+    int addr;
+    int value; // il faudra supprimer ce champ a terme, les valeurs doivent uniquement etre stoquées sur la mémoire du fpga
     int depth;
 } Data;
 
@@ -56,6 +57,7 @@ int orOp();
 int ifCond();
 
 int depth;
+int sp; // On stoque la valeur courante du pointeur de pile
 Stack *stack;
 InstructionStack *istack;
 FILE *asm_file;
