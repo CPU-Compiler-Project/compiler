@@ -7,19 +7,52 @@
 // en fait on a pas implementer de push en VHDL, il faut qu'on gère les adresses memoire
 // du fpga. Elles sont numérotées de 0 a 15 dans notre implémentation vhdl et chaque registre fait 1 octet
 // Pour savoir l'addresse du premier registre disponible, on a l'int sp qui pointe vers la première adresse dispo
+void printStack();
+void printStack() {
+    
+    Stack *stack_tmp = stack;
+    printf("On va print la stack paniquez pas\n");
+
+    while (stack_tmp != NULL) {
+        printf("Stack value %s \n", stack_tmp->value.name);
+        stack_tmp = stack_tmp->next;
+    }
+}
 
 int push(int val)
 {
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "X\"%02x%02x%02x00\" -- @%d => STORE 0x%02x %d", STORE, sp, val, i_addr, sp, val);
+    sprintf(opStr, "X\"%02x%02x%02x00\" -- @%d => AFC 0x%02x %d", AFC, sp, val, i_addr, sp, val);
     i_addr++;
     sp++;
-    printf("PUSH: [%s]\n", opStr);
+    printf("AFC: [%s]\n", opStr);
     pushInstruction(opStr);
+
     return 0;
 }
 
-// aucune idée de comment marche ce truc avec le fpga
+int copy(int src_addr, int dest_addr) {
+    char opStr[MAX_BUFFER];
+    sprintf(opStr, "X\"%02x%02x%02x00\" -- @%d => COP 0x%02x 0x%02x", COP, dest_addr, src_addr, i_addr, dest_addr, src_addr);
+    i_addr++;
+    printf("COP: [%s]\n", opStr);
+    
+    return pushInstruction(opStr);
+}
+
+int pushCOP(Stack *var_addr)
+{
+    printStack();
+    if(!isVarAddressExist(var_addr)) {
+        printf("pushCOP error [%p]\n", var_addr);
+        return -1;
+    }
+    copy(var_addr->value.addr, sp);
+    sp++;
+    
+    return 0;
+}
+
 int pushInstruction(char *instruction)
 {
     InstructionStack *element = malloc(sizeof(&istack));
@@ -48,15 +81,6 @@ int pushVar(char *name)
 int pull() {
     stack = stack->next;
     sp--;
-    return 0;
-}
-
-// je suis pas sur de ce que fait celle la, pour moi faudrait modifier la stack aussi
-int popASM() {
-    char opStr[MAX_BUFFER];
-    sprintf(opStr, "0x%x", POP);
-    printf("POP: [%s]\n", opStr);
-    pushInstruction(opStr);
     return 0;
 }
 
@@ -110,21 +134,6 @@ int writeInstructions() {
     return 0;
 }
 
-
-// TODO: je pense que le sprintf n'est pas bon
-int writeValues() {
-    while (stack != NULL) {
-        char opStr[MAX_BUFFER];
-        //sprintf(opStr, "0x%x %p %d", AFC, stack, stack->value.addr);
-        sprintf(opStr, "0x%x %p %d", AFC, stack, stack->value.addr);
-        printf("AFC: [%s]\n", opStr);
-        pushInstruction(opStr);
-        pull();
-    }
-    
-    return 0;
-}
-
 void incr_depth() {
     depth++;
 }
@@ -145,13 +154,13 @@ int closeFile() {
 
 int allocate(int a) {
     push(a);
-    printf("%d -> %d[%s] at %p\n", a, stack->value.addr, stack->value.name, (void*)stack);
+    printf("%d -> %d[%s]\n", a, stack->value.addr, stack->value.name);
     return 0;
 }
 
 int allocateVar(char *var) {   
     pushVar(var);
-    printf("%s -> %d[%s] at %p\n", var, stack->value.addr, stack->value.name, (void*)stack);
+    printf("%s -> %d[%s]\n", var, stack->value.addr, stack->value.name);
     return 0;
 }
 
@@ -174,9 +183,11 @@ int editVar(Stack *var_addr) {
         printf("editVar error [%p]\n", var_addr);
         return -1;
     }
+
+    copy(--sp, var_addr->value.addr); // On libere la derniere case mémoire utilisée
+
     // instruction de changement de valeur a l'addresse var_addr
-    printf("[UPDATE]%s -> %d[%s] at %p\n",  var_addr->value.name, var_addr->value.addr, var_addr->value.name, (void*)var_addr);
-    pull();
+    printf("[UPDATE]%s -> %d[%s]\n",  var_addr->value.name, var_addr->value.addr, var_addr->value.name);
 
     return 0;
 }
@@ -198,88 +209,43 @@ Stack *getAddress(char *name) {
     }
     
     if(stack_tmp == NULL) {
-        printf("getAddress error not found %s \n", name);
         return NULL; //TODO
     }
 
     return stack_tmp;
 }
 
-int getValue(char *name) {
-    Stack *stack_tmp = getAddress(name);
-    return stack_tmp != NULL ? stack_tmp->value.addr : 0; // error code could be better
-}
-
-// je capte pas pourquoi on fait appel a popASM, pour moi il faut réutiliser la structure des op suivantes
-int addition() {
-    popASM();
-    
-    char opStr1[MAX_BUFFER];
-    //sprintf(opStr1, "0x%x 0x%x 0x%x", ADD, SP, R0);
-    printf("ADD: [%s]\n", opStr1);
-    pushInstruction(opStr1);
-
-    return 0;
+int addition() {    
+    return arithmeticOperation("ADD", ADD);
 }
 
 int multiply() {
-    Stack *addr1 = stack;
-    pull();
-    Stack *addr2 = stack;
-
-    char opStr[MAX_BUFFER];
-    //sprintf(opStr, "0x%x %p %p", MUL, addr2, addr1);
-    sprintf(opStr, "0x%x %d %d", MUL, addr2->value.addr, addr1->value.addr);
-    printf("MUL: [%s]\n", opStr);
-    pushInstruction(opStr);
-
-    return 0;
+    return arithmeticOperation("MUL", MUL);
 }
 
 int divide() {
-    Stack *addr1 = stack;
-    pull();
-    Stack *addr2 = stack;
-
-    char opStr[MAX_BUFFER];
-    //sprintf(opStr, "0x%x %p %p", DIV, addr2, addr1);
-    sprintf(opStr, "0x%x %d %d", DIV, addr2->value.addr, addr1->value.addr);
-    printf("DIV: [%s]\n", opStr);
-    pushInstruction(opStr);
-
-    return 0;
+    return arithmeticOperation("DIV", DIV);
 }
 
 int substraction() {
-    Stack *addr1 = stack;
-    pull();
-    Stack *addr2 = stack;
+    return arithmeticOperation("SOU", SOU);
+}
 
+int arithmeticOperation(char *op, int op_code) {
     char opStr[MAX_BUFFER];
-    //sprintf(opStr, "0x%x %p %p", SOU, addr2, addr1);
-    sprintf(opStr, "0x%x %d %d", SOU, addr2->value.addr, addr1->value.addr);
-    printf("SOU: [%s]\n", opStr);
-    pushInstruction(opStr);
-
-    return 0;
+    sp--;
+    sprintf(opStr, "X\"%02x%02x%02x%02x\" -- @%d => %s 0x%02x 0x%02x 0x%02x", op_code, sp-1, sp-1, sp, i_addr, op, sp-1, sp-1 , sp);  // sp-1 is before last element
+    i_addr++;
+    printf("%s: [%s]\n", op, opStr);
+    return pushInstruction(opStr);
 }
 
-int andOp() {
-    Stack *addr1 = stack;
-    pull();
-    Stack *addr2 = stack;
-    //TODO: write asm
-
-    return 0;
+int andOp() {  // On utilise le flag Z: s'il est levé, alors booléen négatif
+    return arithmeticOperation("MUL", MUL) ? 1 : 0; // should be ok but we still want to be sure to output a boolean
 }
 
-int orOp() {
-    Stack *addr1 = stack;
-    pull();
-    Stack *addr2 = stack;
-    //TODO: write asm
-
-    return 0;
+int orOp() {   // On utilise le flag Z: s'il est levé, alors booléen négatif
+    return arithmeticOperation("ADD", ADD) ? 1 : 0; // should be ok but we still want to be sure to output a boolean
 }
 
 int ifCond() {

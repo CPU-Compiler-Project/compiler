@@ -42,13 +42,13 @@ Expr            : tPO Expr tPF { $$ = $2; }
                   | Expr tAND Expr { andOp(); }
                   | Expr tOR Expr { orOp(); }
                   | Int
-                  | tVAR { allocate(getValue($1)); }
+                  | tVAR { pushCOP(getAddress($1)); }
                   ;
 
 While           : tWHILE tPO Expr tPF Body
                   ;
 
-AffectationOpt  : tVAR { $<nb>$ = createVar($1); }
+AffectationOpt  : tVAR { yyerror("c'est une declaration sans affectation!"); $<nb>$ = createVar($1); }
                   | Affectation
                   ;
 
@@ -66,7 +66,7 @@ Declaration     : ConstOpt tINT MultVar
 Affectation     : tVAR { $<nb>$ = createVar($1); } tEQ Expr { $<nb>$ = editVar(getAddress($1)); }
                   ;
 
-AffectationEdit : Var tEQ Expr { $<nb>$ = editVar(getAddress($1)); }
+AffectationEdit : Var tEQ Expr { $<nb>$ = editVar($1); }
                   ;
 
 If              : tIF tPO Expr tPF { yyerror("c'est un IF!"); } Body { yyerror("c'est un IF!"); } 
@@ -77,7 +77,7 @@ If              : tIF tPO Expr tPF { yyerror("c'est un IF!"); } Body { yyerror("
 Printf          : tPRINTF tPO Var tPF { printf("%p", $3); yyerror("text var"); }
                   ;
 
-Var             : tVAR { yyerror("c'est un VARRR!") ; $$ = getAddress($1); }
+Var             : tVAR { $$ = getAddress($1); }
 
 Int             : tNB { allocate($1); }
                   | tNBEXP { allocate($1); }
@@ -98,7 +98,6 @@ int main(void) {
   istack = malloc(sizeof(InstructionStack));
   initFile();
   yyparse();
-  writeValues();
   writeInstructions();
   closeFile();
 
