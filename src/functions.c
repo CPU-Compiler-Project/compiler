@@ -11,24 +11,18 @@
 int push(int val)
 {
     char opStr[MAX_BUFFER];
-    //sprintf(opStr, "0x%x %d", PUSH, val);
-    sprintf(opStr, "0x%d %d %d", 22, sp, val);
+    sprintf(opStr, "X\"%02x%02x%02x00\" -- @%d => STORE 0x%02x %d", STORE, sp, val, i_addr, sp, val);
+    i_addr++;
     sp++;
-    printf("TEST11");
     printf("PUSH: [%s]\n", opStr);
-    printf("TEST22");
     pushInstruction(opStr);
-
     return 0;
 }
 
 // aucune idée de comment marche ce truc avec le fpga
 int pushInstruction(char *instruction)
 {
-    
-    printf("TEST3");
     InstructionStack *element = malloc(sizeof(&istack));
-    printf("TEST44");
     if(!element)
         return -1;
     element->instruction = strndup(instruction, MAX_BUFFER);
@@ -43,7 +37,7 @@ int pushVar(char *name)
     Stack *element = malloc(sizeof(&stack));
     if(!element)
         return -1;
-    element->value = (Data) { .name = name, .addr = sp, .value = 0, .depth = depth };
+    element->value = (Data) { .name = name, .addr = sp, .depth = depth };
     element->next = stack;
     stack = element;
     push(0); // On réserve un registre qu'on initialise à 0
@@ -60,7 +54,7 @@ int pull() {
 // je suis pas sur de ce que fait celle la, pour moi faudrait modifier la stack aussi
 int popASM() {
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "0x%x %x", POP, R0);
+    sprintf(opStr, "0x%x", POP);
     printf("POP: [%s]\n", opStr);
     pushInstruction(opStr);
     return 0;
@@ -68,6 +62,7 @@ int popASM() {
 
 int pullInstruction() {
     istack = istack->next;
+    i_addr--;
     return 0;
 }
 
@@ -92,8 +87,21 @@ int writeToFile(char *str) {
 }
 
 int writeInstructions() {
+    int i_empty = MAX_INSTRUCTIONS-1;
+
+    while(i_empty >= MAX_INSTRUCTIONS-1-(MAX_INSTRUCTIONS-1-i_addr)) {
+        char str[MAX_BUFFER];
+        sprintf(str, "%sX\"00000000\" -- @%d", (i_empty == MAX_INSTRUCTIONS-1 ? "  " : ", "), i_empty);
+        if(writeToFile(str) < 0) {
+            return -1;
+        }
+        i_empty--;
+    }
+
     while (istack != NULL) {
-        if(writeToFile(istack->instruction) < 0) {
+        char str[MAX_BUFFER];
+        sprintf(str, "%s%s", (i_addr == MAX_INSTRUCTIONS-1 ? "  " : ", "), istack->instruction);
+        if(writeToFile(str) < 0) {
             return -1;
         }
         pullInstruction();
@@ -107,8 +115,8 @@ int writeInstructions() {
 int writeValues() {
     while (stack != NULL) {
         char opStr[MAX_BUFFER];
-        //sprintf(opStr, "0x%x %p %d", AFC, stack, stack->value.value);
-        sprintf(opStr, "0x%x %p %d", AFC, stack, stack->value.value);
+        //sprintf(opStr, "0x%x %p %d", AFC, stack, stack->value.addr);
+        sprintf(opStr, "0x%x %p %d", AFC, stack, stack->value.addr);
         printf("AFC: [%s]\n", opStr);
         pushInstruction(opStr);
         pull();
@@ -137,13 +145,13 @@ int closeFile() {
 
 int allocate(int a) {
     push(a);
-    printf("%d -> %d[%s] at %p\n", a, stack->value.value, stack->value.name, (void*)stack);
+    printf("%d -> %d[%s] at %p\n", a, stack->value.addr, stack->value.name, (void*)stack);
     return 0;
 }
 
 int allocateVar(char *var) {   
     pushVar(var);
-    printf("%s -> %d[%s] at %p\n", var, stack->value.value, stack->value.name, (void*)stack);
+    printf("%s -> %d[%s] at %p\n", var, stack->value.addr, stack->value.name, (void*)stack);
     return 0;
 }
 
@@ -166,8 +174,8 @@ int editVar(Stack *var_addr) {
         printf("editVar error [%p]\n", var_addr);
         return -1;
     }
-    var_addr->value.value = stack->value.value;
-    printf("[UPDATE]%s -> %d[%s] at %p\n",  var_addr->value.name, var_addr->value.value, var_addr->value.name, (void*)var_addr);
+    // instruction de changement de valeur a l'addresse var_addr
+    printf("[UPDATE]%s -> %d[%s] at %p\n",  var_addr->value.name, var_addr->value.addr, var_addr->value.name, (void*)var_addr);
     pull();
 
     return 0;
@@ -190,6 +198,7 @@ Stack *getAddress(char *name) {
     }
     
     if(stack_tmp == NULL) {
+        printf("getAddress error not found %s \n", name);
         return NULL; //TODO
     }
 
@@ -198,7 +207,7 @@ Stack *getAddress(char *name) {
 
 int getValue(char *name) {
     Stack *stack_tmp = getAddress(name);
-    return stack_tmp != NULL ? stack_tmp->value.value : 0; // error code could be better
+    return stack_tmp != NULL ? stack_tmp->value.addr : 0; // error code could be better
 }
 
 // je capte pas pourquoi on fait appel a popASM, pour moi il faut réutiliser la structure des op suivantes
@@ -295,5 +304,4 @@ int ifBis() {
     pushInstruction(opStr);
 
     return 0;
-    
 }

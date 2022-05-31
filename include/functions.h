@@ -5,11 +5,11 @@
 #include <stdio.h>
 
 #define MAX_BUFFER 100
+#define MAX_INSTRUCTIONS 64
 
 typedef struct Data {
     char *name;
     int addr;
-    int value; // il faudra supprimer ce champ a terme, les valeurs doivent uniquement etre stoquées sur la mémoire du fpga
     int depth;
 } Data;
 
@@ -24,7 +24,6 @@ typedef struct InstructionStack {
 } InstructionStack;
 
 enum Opcode { ADD = 0x01, MUL = 0x02, SOU = 0x03, DIV = 0x04, COP = 0x05, AFC = 0x06, LOAD = 0x07, STORE = 0x08, JMP = 0x09, JMPF = 0x0A, JMPB = 0x0B, CMP = 0x0C, CMPF = 0x0D, CMPB = 0x0E, PRINT = 0x0F, HALT = 0x10, NOP = 0x11, PUSH = 0x12, POP = 0x13, CALL = 0x14, RET = 0x15 };
-enum AsmRegister { R0 = 0x00, R1 = 0x01, R2 = 0x02, R3 = 0x03, R4 = 0x04, R5 = 0x05, R6 = 0x06, R7 = 0x07, R8 = 0x08, R9 = 0x09, R10 = 0x0A, R11 = 0x0B, R12 = 0x0C, R13 = 0x0D, R14 = 0x0E, R15 = 0x0F };
 
 Stack *getAddress(char *name);
 int getValue(char *name);
@@ -57,7 +56,8 @@ int orOp();
 int ifCond();
 
 int depth;
-int sp; // On stoque la valeur courante du pointeur de pile
+int i_addr;
+int sp; // On stocke la valeur courante du pointeur de pile
 Stack *stack;
 InstructionStack *istack;
 FILE *asm_file;

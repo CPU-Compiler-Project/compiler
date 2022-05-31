@@ -66,7 +66,7 @@ Declaration     : ConstOpt tINT MultVar
 Affectation     : tVAR { $<nb>$ = createVar($1); } tEQ Expr { $<nb>$ = editVar(getAddress($1)); }
                   ;
 
-AffectationEdit : Var tEQ Expr { $<nb>$ = editVar($1); }
+AffectationEdit : Var tEQ Expr { $<nb>$ = editVar(getAddress($1)); }
                   ;
 
 If              : tIF tPO Expr tPF { yyerror("c'est un IF!"); } Body { yyerror("c'est un IF!"); } 
@@ -77,7 +77,7 @@ If              : tIF tPO Expr tPF { yyerror("c'est un IF!"); } Body { yyerror("
 Printf          : tPRINTF tPO Var tPF { printf("%p", $3); yyerror("text var"); }
                   ;
 
-Var             : tVAR { $$ = getAddress($1); }
+Var             : tVAR { yyerror("c'est un VARRR!") ; $$ = getAddress($1); }
 
 Int             : tNB { allocate($1); }
                   | tNBEXP { allocate($1); }
@@ -94,6 +94,7 @@ int main(void) {
   printf("Compiler\n");
   sp = 0;
   stack = malloc(sizeof(Stack));
+  i_addr = 0;
   istack = malloc(sizeof(InstructionStack));
   initFile();
   yyparse();
