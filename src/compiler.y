@@ -7,7 +7,7 @@
 void yyerror(char *s);
 %}
 %union { int nb; Stack *addr; char *var; }
-%token tPRINTF tCOMMA tMAIN tIF tAO tAF tWHILE tFOR tPO tPF tRETURN tPV tADD tMUL tELSE tEQEQ tEQ tSUP tINF tMINUS tDIV tOR tANDAND tAND tINT tCONST tVOID tFL tERROR tSUPEQ tINFEQ
+%token tCOMMA tMAIN tIF tAO tAF tWHILE tFOR tPO tPF tRETURN tPV tADD tMUL tELSE tEQEQ tEQ tSUP tINF tMINUS tDIV tOR tANDAND tAND tINT tCONST tVOID tFL tERROR tSUPEQ tINFEQ
 %token <nb> tNB tNBEXP
 %token <var> tVAR
 %type <addr> Var
@@ -27,7 +27,6 @@ Instructions    : If
                   | AffectationEdit tPV  { }
                   | While
                   | Declaration tPV
-                  | Printf tPV
                   | Instructions Instructions
                   ;
                   
@@ -80,9 +79,6 @@ If              : IfCond tELSE { ifJump(1); } Body { ifJump(0); }
                   | IfCond { ifJump(0); }
 
 IfCond          : tIF tPO Expr tPF { ifCond(); } Body
-                  ;
-
-Printf          : tPRINTF tPO Var tPF { printf("%p", $3)}
                   ;
 
 Var             : tVAR { $$ = getAddress($1); }

@@ -15,7 +15,6 @@
 "while"  { return tWHILE; }
 "main"   { return tMAIN; }
 "for"    { return tFOR; }
-"printf" { return tPRINTF; }
 "("      { return tPO; }
 ")"      { return tPF; }
 "return" { return tRETURN; }
