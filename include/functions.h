@@ -66,6 +66,9 @@ int ifJump(int doElse);
 int whileCond();
 int whileJump();
 
+int pushLOAD(Stack *var_add);
+int editPtr(Stack *var_addr);
+
 // Les adresses memoire du FPGA sont numérotées de 0 a 15 dans notre implémentation vhdl et chaque registre fait 1 octet
 // Pour savoir l'addresse du premier registre disponible, on a l'int sp qui pointe vers la première adresse dispo
 

@@ -7,7 +7,7 @@
 void yyerror(char *s);
 %}
 %union { int nb; Stack *addr; char *var; }
-%token tPRINTF tCOMMA tMAIN tIF tAO tAF tWHILE tFOR tPO tPF tRETURN tPV tADD tMUL tELSE tEQEQ tEQ tSUP tINF tMINUS tDIV tOR tAND tINT tCONST tVOID tFL tERROR tSUPEQ tINFEQ
+%token tPRINTF tCOMMA tMAIN tIF tAO tAF tWHILE tFOR tPO tPF tRETURN tPV tADD tMUL tELSE tEQEQ tEQ tSUP tINF tMINUS tDIV tOR tANDAND tAND tINT tCONST tVOID tFL tERROR tSUPEQ tINFEQ
 %token <nb> tNB tNBEXP
 %token <var> tVAR
 %type <addr> Var
@@ -39,10 +39,12 @@ Expr            : tPO Expr tPF
                   | Expr tMINUS Expr { substraction(); }
                   | Expr tDIV Expr { divide(); }
                   | Expr tMUL Expr { multiply(); }
-                  | Expr tAND Expr { andOp(); }
+                  | Expr tANDAND Expr { andOp(); }
                   | Expr tOR Expr { orOp(); }
                   | Int
                   | tVAR { pushCOP(getAddress($1)); }
+                  | tMUL tVAR { pushLOAD(getAddress($2)); }
+                  | tAND tVAR { push(getAddress($2)->value.addr); }
                   ;
 
 While           : tWHILE tPO { whileCond(); } Expr tPF { ifCond(); } Body { whileJump(); ifJump(0); }
@@ -60,13 +62,18 @@ ConstOpt        : tCONST
                   |
                   ;
 
-Declaration     : ConstOpt tINT MultVar
+PtrOpt          : tMUL
+                  |
+                  ;
+
+Declaration     : ConstOpt tINT PtrOpt MultVar
                   ;
 
 Affectation     : tVAR { $<nb>$ = createVar($1); } tEQ Expr { $<nb>$ = editVar(getAddress($1)); }
                   ;
 
 AffectationEdit : Var tEQ Expr { $<nb>$ = editVar($1); }
+                  |tMUL Var tEQ Expr { $<nb>$ = editPtr($2); }
                   ;
 
 If              : IfCond tELSE { ifJump(1); } Body { ifJump(0); }
@@ -75,7 +82,7 @@ If              : IfCond tELSE { ifJump(1); } Body { ifJump(0); }
 IfCond          : tIF tPO Expr tPF { ifCond(); } Body
                   ;
 
-Printf          : tPRINTF tPO Var tPF { printf("%p", $3); yyerror("text var"); }
+Printf          : tPRINTF tPO Var tPF { printf("%p", $3)}
                   ;
 
 Var             : tVAR { $$ = getAddress($1); }

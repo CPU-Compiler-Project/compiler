@@ -33,7 +33,8 @@
 ">"      { return tSUP; }
 "<"      { return tINF; }
 "||"     { return tOR; }
-"&&"     { return tAND; }
+"&&"     { return tANDAND; }
+"&"      { return tAND; }
 ","      { return tCOMMA; }
 "int"    { return tINT; }
 "const"  { return tCONST; }

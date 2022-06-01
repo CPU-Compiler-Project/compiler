@@ -298,3 +298,32 @@ int whileJump(){
     printf("JMP: [%s]\n", opStr);
     return pushInstruction(opStr);
 }
+
+int pushLOAD(Stack *var_addr)
+{
+    if(!isVarAddressExist(var_addr)) {
+        printf("pushLOAD error [%p]\n", var_addr);
+        return -1;
+    }
+    
+    char opStr[MAX_BUFFER];
+    sprintf(opStr, "X\"%02x%02x%02x00\" -- @0x%02x => LOAD 0x%02x 0x%02x", LOAD, sp, var_addr->value.addr, i_addr, sp, var_addr->value.addr);
+    printf("LOAD: [%s]\n", opStr);
+    sp++;
+    
+    return pushInstruction(opStr);
+}
+
+int editPtr(Stack *var_addr) {
+    if(!isVarAddressExist(var_addr)) {
+        printf("editVar error [%p]\n", var_addr);
+        return -1;
+    }
+
+    char opStr[MAX_BUFFER];
+    sp--;
+    sprintf(opStr, "X\"%02x%02x%02x00\" -- @0x%02x => STORE 0x%02x 0x%02x", STORE, var_addr->value.addr, sp, i_addr, var_addr->value.addr, sp);
+    printf("STORE: [%s]\n", opStr);
+
+    return pushInstruction(opStr);
+}
