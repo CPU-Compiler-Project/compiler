@@ -45,10 +45,10 @@ Expr            : tPO Expr tPF
                   | tVAR { pushCOP(getAddress($1)); }
                   ;
 
-While           : tWHILE tPO Expr tPF Body
+While           : tWHILE tPO { whileCond(); } Expr tPF { ifCond(); } Body { whileJump(); ifJump(0); }
                   ;
 
-AffectationOpt  : tVAR { yyerror("c'est une declaration sans affectation!"); $<nb>$ = createVar($1); }
+AffectationOpt  : tVAR { $<nb>$ = createVar($1); } // déclaration sans affectation
                   | Affectation
                   ;
 
@@ -69,10 +69,10 @@ Affectation     : tVAR { $<nb>$ = createVar($1); } tEQ Expr { $<nb>$ = editVar(g
 AffectationEdit : Var tEQ Expr { $<nb>$ = editVar($1); }
                   ;
 
-If              : IfCond tELSE { yyerror("c'est un IFJump!"); ifJumpElse(); } Body { yyerror("c'est un IFJumpElse!"); ifJump(); }
-                  | IfCond { yyerror("c'est un IFJump!"); ifJump(); }
+If              : IfCond tELSE { ifJump(1); } Body { ifJump(0); }
+                  | IfCond { ifJump(0); }
 
-IfCond          : tIF tPO Expr tPF { yyerror("c'est un IF!"); yyerror("c'est un IFCond!"); ifCond(); } Body
+IfCond          : tIF tPO Expr tPF { ifCond(); } Body
                   ;
 
 Printf          : tPRINTF tPO Var tPF { printf("%p", $3); yyerror("text var"); }
@@ -97,6 +97,7 @@ int main(void) {
   stack = malloc(sizeof(Stack));
   i_addr = 0;
   istack = malloc(sizeof(InstructionStack));
+  while_stack = malloc(sizeof(WhileStack));
   initFile();
   yyparse();
   writeInstructions();

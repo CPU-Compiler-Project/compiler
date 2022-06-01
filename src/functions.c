@@ -47,6 +47,18 @@ int pushInstruction(char *instruction)
     return 0;
 }
 
+int pushWhile(int addr)
+{
+    WhileStack *element = malloc(sizeof(&while_stack));
+    if(!element)
+        return -1;
+    element->addr = addr;
+    element->next = while_stack;
+    while_stack = element;
+
+    return 0;
+}
+
 int pushVar(char *name)
 {
     Stack *element = malloc(sizeof(&stack));
@@ -72,6 +84,11 @@ int pullInstruction() {
     return 0;
 }
 
+int pullWhile() {
+    while_stack = while_stack->next;
+    return 0;
+}
+
 int initFile() {
     asm_file = fopen("./build/out.asm", "w");
     if (asm_file == NULL) {
@@ -80,6 +97,7 @@ int initFile() {
 
     stack = NULL;
     istack = NULL;
+    while_stack = NULL;
     depth = 0;
 
     return 0;
@@ -238,7 +256,7 @@ int ifCond() {
     return pushInstruction(opStr);
 }
 
-int ifJump() { // on execute cette fonction à la fin du body du if, et on remplace l'instruction laissé par la fonction précédente
+int ifJump(int doElse) { // on execute cette fonction à la fin du body du if, et on remplace l'instruction laissé par la fonction précédente
     InstructionStack *istack_tmp = istack;
     char str[MAX_BUFFER];
     int instruction_cpt = 1;
@@ -252,36 +270,28 @@ int ifJump() { // on execute cette fonction à la fin du body du if, et on rempl
         printf("ifJump error\n");
         return -1;
     }
+    
+    if (doElse) {
+        ifCond();
+    }
 
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "X\"%02x%02x0000\" -- @0x%02x => JMPF 0x%02x", JMPF, i_addr, i_addr - instruction_cpt, i_addr);
+    sprintf(opStr, "X\"%02x%02x0000\" -- @0x%02x => JMPF 0x%02x", JMPF, i_addr, i_addr - (doElse ? 1 : 0) - instruction_cpt, i_addr);
     printf("JMPF: [%s]\n", opStr);
     istack_tmp->instruction = strndup(opStr, MAX_BUFFER);
 
     return 0;
 }
 
-int ifJumpElse() { // on execute cette fonction à la fin du body du if, et on remplace l'instruction laissé par la fonction précédente et on ajoute une nouvelle balise temporaire avant l'adresse d'arrivée
-    InstructionStack *istack_tmp = istack;
-    char str[MAX_BUFFER];
-    int instruction_cpt = 1;
-    sprintf(str, "JMPF_TMP_%d", depth);
-    while (istack_tmp != NULL && strcmp(istack_tmp->instruction, str) != 0) {
-        istack_tmp = istack_tmp->next;
-        instruction_cpt++;
-    }
+int whileCond() {  // sert a retenir l'addresse de début de boucle (avant l'evaluation de la contidtion)
+    return pushWhile(sp);
+}
 
-    if(istack_tmp == NULL) {
-        printf("ifJump error\n");
-        return -1;
-    }
-
-    ifCond();
-
+int whileJump(){
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "X\"%02x%02x0000\" -- @0x%02x => JMPF 0x%02x", JMPF, i_addr, i_addr-1 - instruction_cpt, i_addr);
-    printf("JMPF: [%s]\n", opStr);
-    istack_tmp->instruction = strndup(opStr, MAX_BUFFER);
-
-    return 0;
+    sprintf(opStr, "X\"%02x%02x0000\" -- @0x%02x => JMP 0x%02x", JMP, while_stack->addr, i_addr, while_stack->addr);
+    pullWhile();
+    i_addr++;
+    printf("JMP: [%s]\n", opStr);
+    return pushInstruction(opStr);
 }
