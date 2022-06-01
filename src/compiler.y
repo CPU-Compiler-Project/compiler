@@ -10,7 +10,7 @@ void yyerror(char *s);
 %token tPRINTF tCOMMA tMAIN tIF tAO tAF tWHILE tFOR tPO tPF tRETURN tPV tADD tMUL tELSE tEQEQ tEQ tSUP tINF tMINUS tDIV tOR tAND tINT tCONST tVOID tFL tERROR tSUPEQ tINFEQ
 %token <nb> tNB tNBEXP
 %token <var> tVAR
-%type <addr> Int Expr Var // j'ai touché au c mais pas trop au yacc, je pense qu'il va falloir repenser les types
+%type <addr> Var
 
 %right tEQ
 %left tADD tMINUS
@@ -34,7 +34,7 @@ Instructions    : If
 Main            : tINT tMAIN tPO tPF BodyInt { return 0; }
                   ;
 
-Expr            : tPO Expr tPF { $$ = $2; }
+Expr            : tPO Expr tPF
                   | Expr tADD Expr { addition(); }
                   | Expr tMINUS Expr { substraction(); }
                   | Expr tDIV Expr { divide(); }
@@ -69,9 +69,10 @@ Affectation     : tVAR { $<nb>$ = createVar($1); } tEQ Expr { $<nb>$ = editVar(g
 AffectationEdit : Var tEQ Expr { $<nb>$ = editVar($1); }
                   ;
 
-If              : tIF tPO Expr tPF { yyerror("c'est un IF!"); } Body { yyerror("c'est un IF!"); } 
-                  | tIF tPO Expr tPF Body tELSE If { yyerror("c'est un ELSEIF!"); }
-                  | tIF tPO Expr tPF Body tELSE Body { yyerror("c'est un ELSE!"); }
+If              : IfCond tELSE { yyerror("c'est un IFJump!"); ifJumpElse(); } Body { yyerror("c'est un IFJumpElse!"); ifJump(); }
+                  | IfCond { yyerror("c'est un IFJump!"); ifJump(); }
+
+IfCond          : tIF tPO Expr tPF { yyerror("c'est un IF!"); yyerror("c'est un IFCond!"); ifCond(); } Body
                   ;
 
 Printf          : tPRINTF tPO Var tPF { printf("%p", $3); yyerror("text var"); }

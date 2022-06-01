@@ -4,36 +4,19 @@
 
 #include "functions.h"
 
-// en fait on a pas implementer de push en VHDL, il faut qu'on gère les adresses memoire
-// du fpga. Elles sont numérotées de 0 a 15 dans notre implémentation vhdl et chaque registre fait 1 octet
-// Pour savoir l'addresse du premier registre disponible, on a l'int sp qui pointe vers la première adresse dispo
-void printStack();
-void printStack() {
-    
-    Stack *stack_tmp = stack;
-    printf("On va print la stack paniquez pas\n");
-
-    while (stack_tmp != NULL) {
-        printf("Stack value %s \n", stack_tmp->value.name);
-        stack_tmp = stack_tmp->next;
-    }
-}
-
 int push(int val)
 {
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "X\"%02x%02x%02x00\" -- @%d => AFC 0x%02x %d", AFC, sp, val, i_addr, sp, val);
+    sprintf(opStr, "X\"%02x%02x%02x00\" -- @0x%02x => AFC 0x%02x %d", AFC, sp, val, i_addr, sp, val);
     i_addr++;
     sp++;
     printf("AFC: [%s]\n", opStr);
-    pushInstruction(opStr);
-
-    return 0;
+    return pushInstruction(opStr);
 }
 
 int copy(int src_addr, int dest_addr) {
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "X\"%02x%02x%02x00\" -- @%d => COP 0x%02x 0x%02x", COP, dest_addr, src_addr, i_addr, dest_addr, src_addr);
+    sprintf(opStr, "X\"%02x%02x%02x00\" -- @0x%02x => COP 0x%02x 0x%02x", COP, dest_addr, src_addr, i_addr, dest_addr, src_addr);
     i_addr++;
     printf("COP: [%s]\n", opStr);
     
@@ -42,7 +25,6 @@ int copy(int src_addr, int dest_addr) {
 
 int pushCOP(Stack *var_addr)
 {
-    printStack();
     if(!isVarAddressExist(var_addr)) {
         printf("pushCOP error [%p]\n", var_addr);
         return -1;
@@ -115,7 +97,7 @@ int writeInstructions() {
 
     while(i_empty >= MAX_INSTRUCTIONS-1-(MAX_INSTRUCTIONS-1-i_addr)) {
         char str[MAX_BUFFER];
-        sprintf(str, "%sX\"00000000\" -- @%d", (i_empty == MAX_INSTRUCTIONS-1 ? "  " : ", "), i_empty);
+        sprintf(str, "%sX\"00000000\" -- @0x%02x", (i_empty == MAX_INSTRUCTIONS-1 ? "  " : ", "), i_empty);
         if(writeToFile(str) < 0) {
             return -1;
         }
@@ -154,13 +136,13 @@ int closeFile() {
 
 int allocate(int a) {
     push(a);
-    printf("%d -> %d[%s]\n", a, stack->value.addr, stack->value.name);
+    printf("%d -> 0x%02x\n", a, sp-1);
     return 0;
 }
 
 int allocateVar(char *var) {   
     pushVar(var);
-    printf("%s -> %d[%s]\n", var, stack->value.addr, stack->value.name);
+    printf("%s -> 0x%02x[%s]\n", var, stack->value.addr, stack->value.name);
     return 0;
 }
 
@@ -187,7 +169,7 @@ int editVar(Stack *var_addr) {
     copy(--sp, var_addr->value.addr); // On libere la derniere case mémoire utilisée
 
     // instruction de changement de valeur a l'addresse var_addr
-    printf("[UPDATE]%s -> %d[%s]\n",  var_addr->value.name, var_addr->value.addr, var_addr->value.name);
+    printf("[UPDATE]%s -> %02x[%s]\n",  var_addr->value.name, var_addr->value.addr, var_addr->value.name);
 
     return 0;
 }
@@ -234,7 +216,7 @@ int substraction() {
 int arithmeticOperation(char *op, int op_code) {
     char opStr[MAX_BUFFER];
     sp--;
-    sprintf(opStr, "X\"%02x%02x%02x%02x\" -- @%d => %s 0x%02x 0x%02x 0x%02x", op_code, sp-1, sp-1, sp, i_addr, op, sp-1, sp-1 , sp);  // sp-1 is before last element
+    sprintf(opStr, "X\"%02x%02x%02x%02x\" -- @0x%02x => %s 0x%02x 0x%02x 0x%02x", op_code, sp-1, sp-1, sp, i_addr, op, sp-1, sp-1 , sp);  // sp-1 is before last element
     i_addr++;
     printf("%s: [%s]\n", op, opStr);
     return pushInstruction(opStr);
@@ -250,24 +232,56 @@ int orOp() {   // On utilise le flag Z: s'il est levé, alors booléen négatif
 
 int ifCond() {
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "tmp"); // sera remplacer plus tard dans la compilation
+    sprintf(opStr, "JMPF_TMP_%d", depth); // sera remplacer plus tard dans la compilation
+    i_addr++;
     printf("JMPF: [%s]\n", opStr);
-    pushInstruction(opStr);
-    return 0;
+    return pushInstruction(opStr);
 }
 
-int ifBis() { 
-    InstructionStack *element = malloc(sizeof(&istack));
-    int instructionCPT = 0;
-    while (strcmp(element->instruction,"tmp")!=0) {
-        element = istack->next;
-        instructionCPT++;
+int ifJump() { // on execute cette fonction à la fin du body du if, et on remplace l'instruction laissé par la fonction précédente
+    InstructionStack *istack_tmp = istack;
+    char str[MAX_BUFFER];
+    int instruction_cpt = 1;
+    sprintf(str, "JMPF_TMP_%d", depth);
+    while (istack_tmp != NULL && strcmp(istack_tmp->instruction, str) != 0) {
+        istack_tmp = istack_tmp->next;
+        instruction_cpt++;
+    }
+
+    if(istack_tmp == NULL) {
+        printf("ifJump error\n");
+        return -1;
     }
 
     char opStr[MAX_BUFFER];
-    sprintf(opStr, "0x%x ", JMPF);
+    sprintf(opStr, "X\"%02x%02x0000\" -- @0x%02x => JMPF 0x%02x", JMPF, i_addr, i_addr - instruction_cpt, i_addr);
     printf("JMPF: [%s]\n", opStr);
-    pushInstruction(opStr);
+    istack_tmp->instruction = strndup(opStr, MAX_BUFFER);
+
+    return 0;
+}
+
+int ifJumpElse() { // on execute cette fonction à la fin du body du if, et on remplace l'instruction laissé par la fonction précédente et on ajoute une nouvelle balise temporaire avant l'adresse d'arrivée
+    InstructionStack *istack_tmp = istack;
+    char str[MAX_BUFFER];
+    int instruction_cpt = 1;
+    sprintf(str, "JMPF_TMP_%d", depth);
+    while (istack_tmp != NULL && strcmp(istack_tmp->instruction, str) != 0) {
+        istack_tmp = istack_tmp->next;
+        instruction_cpt++;
+    }
+
+    if(istack_tmp == NULL) {
+        printf("ifJump error\n");
+        return -1;
+    }
+
+    ifCond();
+
+    char opStr[MAX_BUFFER];
+    sprintf(opStr, "X\"%02x%02x0000\" -- @0x%02x => JMPF 0x%02x", JMPF, i_addr, i_addr-1 - instruction_cpt, i_addr);
+    printf("JMPF: [%s]\n", opStr);
+    istack_tmp->instruction = strndup(opStr, MAX_BUFFER);
 
     return 0;
 }

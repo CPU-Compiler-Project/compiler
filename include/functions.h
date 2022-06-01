@@ -55,6 +55,11 @@ int addition();
 int andOp();
 int orOp();
 int ifCond();
+int ifJump();
+int ifJumpElse();
+
+// Les adresses memoire du FPGA sont numérotées de 0 a 15 dans notre implémentation vhdl et chaque registre fait 1 octet
+// Pour savoir l'addresse du premier registre disponible, on a l'int sp qui pointe vers la première adresse dispo
 
 int depth;
 int i_addr;
