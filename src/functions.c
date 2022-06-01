@@ -8,7 +8,6 @@ int push(int val)
 {
     char opStr[MAX_BUFFER];
     sprintf(opStr, "X\"%02x%02x%02x00\" -- @0x%02x => AFC 0x%02x %d", AFC, sp, val, i_addr, sp, val);
-    i_addr++;
     sp++;
     printf("AFC: [%s]\n", opStr);
     return pushInstruction(opStr);
@@ -17,7 +16,6 @@ int push(int val)
 int copy(int src_addr, int dest_addr) {
     char opStr[MAX_BUFFER];
     sprintf(opStr, "X\"%02x%02x%02x00\" -- @0x%02x => COP 0x%02x 0x%02x", COP, dest_addr, src_addr, i_addr, dest_addr, src_addr);
-    i_addr++;
     printf("COP: [%s]\n", opStr);
     
     return pushInstruction(opStr);
@@ -37,12 +35,20 @@ int pushCOP(Stack *var_addr)
 
 int pushInstruction(char *instruction)
 {
-    InstructionStack *element = malloc(sizeof(&istack));
-    if(!element)
+    if(i_addr > MAX_INSTRUCTIONS-1) {
+        printf("pushInstruction error: NO MORE SPACE LEFT! [%s]\n", instruction);
         return -1;
+    }
+    InstructionStack *element = malloc(sizeof(&istack));
+    if(!element) {
+        printf("pushInstruction error: EMPTY STACK! [%s]\n", instruction);
+        return -1;
+    }
     element->instruction = strndup(instruction, MAX_BUFFER);
     element->next = istack;
     istack = element;
+
+    i_addr++;
 
     return 0;
 }
@@ -124,7 +130,7 @@ int writeInstructions() {
 
     while (istack != NULL) {
         char str[MAX_BUFFER];
-        sprintf(str, "%s%s", (i_addr == MAX_INSTRUCTIONS-1 ? "  " : ", "), istack->instruction);
+        sprintf(str, "%s%s", (i_addr == MAX_INSTRUCTIONS ? "  " : ", "), istack->instruction);
         if(writeToFile(str) < 0) {
             return -1;
         }
@@ -235,7 +241,6 @@ int arithmeticOperation(char *op, int op_code) {
     char opStr[MAX_BUFFER];
     sp--;
     sprintf(opStr, "X\"%02x%02x%02x%02x\" -- @0x%02x => %s 0x%02x 0x%02x 0x%02x", op_code, sp-1, sp-1, sp, i_addr, op, sp-1, sp-1 , sp);  // sp-1 is before last element
-    i_addr++;
     printf("%s: [%s]\n", op, opStr);
     return pushInstruction(opStr);
 }
@@ -251,7 +256,6 @@ int orOp() {   // On utilise le flag Z: s'il est levé, alors booléen négatif
 int ifCond() {
     char opStr[MAX_BUFFER];
     sprintf(opStr, "JMPF_TMP_%d", depth); // sera remplacer plus tard dans la compilation
-    i_addr++;
     printf("JMPF: [%s]\n", opStr);
     return pushInstruction(opStr);
 }
@@ -291,7 +295,6 @@ int whileJump(){
     char opStr[MAX_BUFFER];
     sprintf(opStr, "X\"%02x%02x0000\" -- @0x%02x => JMP 0x%02x", JMP, while_stack->addr, i_addr, while_stack->addr);
     pullWhile();
-    i_addr++;
     printf("JMP: [%s]\n", opStr);
     return pushInstruction(opStr);
 }
