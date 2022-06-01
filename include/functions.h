@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #define MAX_BUFFER 100
-#define MAX_INSTRUCTIONS 64
+#define MAX_INSTRUCTIONS 256
 
 typedef struct Data {
     char *name;
